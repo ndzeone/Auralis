@@ -143,6 +143,12 @@ jobs:
           NODE
             exit "$result"
           fi
+      - name: Verify macOS signature and packaged app startup
+        if: matrix.target == 'mac'
+        run: |
+          codesign --verify --deep --strict --verbose=2 apps/launcher/release/mac-arm64/Auralis.app
+          codesign -dv --verbose=2 apps/launcher/release/mac-arm64/Auralis.app
+          node scripts/smoke-mac.mjs
       - name: Compute artifact hashes
         env:
           AURALIS_TARGET: ${{ matrix.target }}
