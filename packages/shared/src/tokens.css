@@ -1,0 +1,57 @@
+:root,
+[data-theme='aurora'] {
+  color-scheme: dark;
+  --bg: #0D1019;
+  --surface: #171C29;
+  --surface-hover: #202638;
+  --border: #343C51;
+  --text: #F3F4FF;
+  --muted: #ADB6CD;
+  --primary: #C4B5FD;
+  --accent: #5EEAD4;
+  --success: #86EFAC;
+  --warning: #FDE68A;
+  --danger: #FDA4AF;
+  --on-primary: #21163C;
+  --shadow: 0 24px 80px #00000030;
+  --radius: 16px;
+}
+[data-theme='midnight'] {
+  color-scheme: dark;
+  --bg: #080F1D; --surface: #111F34; --surface-hover: #1D3049;
+  --border: #30475F; --text: #F0F6FF; --muted: #A6BBD3;
+  --primary: #93C5FD; --accent: #67E8F9; --success: #86EFAC;
+  --warning: #FDE68A; --danger: #FDA4AF; --on-primary: #102A46;
+}
+[data-theme='ember'] {
+  color-scheme: dark;
+  --bg: #19100F; --surface: #2A1B19; --surface-hover: #3B2925;
+  --border: #63423A; --text: #FFF4ED; --muted: #CEB4A9;
+  --primary: #FDBA74; --accent: #FCA5A5; --success: #BEF264;
+  --warning: #FDE68A; --danger: #FDA4AF; --on-primary: #3C1D08;
+}
+[data-theme='forest'] {
+  color-scheme: dark;
+  --bg: #0D1713; --surface: #17271F; --surface-hover: #253D30;
+  --border: #3B5848; --text: #F0FDF4; --muted: #ADCCB9;
+  --primary: #86EFAC; --accent: #FDE68A; --success: #6EE7B7;
+  --warning: #FDE68A; --danger: #FDA4AF; --on-primary: #10351E;
+}
+[data-theme='light'] {
+  color-scheme: light;
+  --bg: #F4F5FA; --surface: #FFFFFF; --surface-hover: #ECEEF6;
+  --border: #C7CCDA; --text: #1D2334; --muted: #576177;
+  --primary: #6941C6; --accent: #087F71; --success: #18723C;
+  --warning: #835500; --danger: #B4233A; --on-primary: #FFFFFF;
+  --shadow: 0 24px 80px #34405412;
+}
+* { box-sizing: border-box; }
+body { margin: 0; color: var(--text); background: var(--bg); font-family: Inter, 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif; -webkit-font-smoothing: antialiased; }
+button, input, select, textarea { font: inherit; }
+button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+button, a { touch-action: manipulation; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid var(--accent); outline-offset: 4px; }
+button { cursor: pointer; }
+button:disabled { cursor: not-allowed; opacity: .55; }
+::selection { background: var(--primary); color: var(--on-primary); }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; } }

@@ -1,0 +1,158 @@
+name: Desktop installers
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: desktop-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-bookworm
+        env:
+          POSTGRES_USER: auralis
+          POSTGRES_PASSWORD: auralis_ci
+          POSTGRES_DB: auralis
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U auralis -d auralis"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://auralis:auralis_ci@localhost:5432/auralis?schema=public
+      TEST_DATABASE_URL: postgresql://auralis:auralis_ci@localhost:5432/auralis?schema=public
+      JWT_SECRET: auralis-ci-only-secret-at-least-32-characters
+      DEV_MAILBOX: 'true'
+      WEB_ORIGIN: http://localhost:5174
+      LAUNCHER_ORIGIN: http://localhost:5173
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.30.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:generate
+      - run: pnpm db:migrate
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm test
+      - run: pnpm build
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  installers:
+    needs: quality
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: windows-latest
+            target: win
+            arch: x64
+          - runner: macos-14
+            target: mac
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.30.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Check tag matches application version
+        if: startsWith(github.ref, 'refs/tags/')
+        run: >-
+          node -e "const p=require('./apps/launcher/package.json');
+          if('v'+p.version!==process.env.GITHUB_REF_NAME)
+          throw new Error('Tag must match apps/launcher/package.json version');"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm assets
+      - name: Windows NSIS installer
+        if: matrix.target == 'win'
+        env:
+          CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        run: pnpm dist:win
+      - name: macOS Apple Silicon DMG and update ZIP
+        if: matrix.target == 'mac'
+        env:
+          CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+          CSC_IDENTITY_AUTO_DISCOVERY: ${{ secrets.MAC_CSC_LINK != '' && 'true' || 'false' }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: pnpm dist:mac
+      - name: Compute artifact hashes
+        env:
+          AURALIS_TARGET: ${{ matrix.target }}
+        run: |
+          node --input-type=module <<'NODE'
+          import { readdir, readFile, writeFile } from 'node:fs/promises';
+          import { createHash } from 'node:crypto';
+          const dir = 'apps/launcher/release';
+          const files = (await readdir(dir)).filter(f => /\.(exe|dmg|zip|yml|blockmap)$/.test(f)).sort();
+          if (!files.some(f => process.env.AURALIS_TARGET === 'win' ? f.endsWith('.exe') : f.endsWith('.dmg'))) {
+            throw new Error('Expected native installer was not built');
+          }
+          const lines = await Promise.all(files.map(async f => `${createHash('sha256').update(await readFile(`${dir}/${f}`)).digest('hex')}  ${f}`));
+          await writeFile(`${dir}/SHA256SUMS-${process.env.AURALIS_TARGET}.txt`, lines.join('\n')+'\n');
+          NODE
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Auralis-${{ matrix.target }}-${{ matrix.arch }}
+          path: |
+            apps/launcher/release/*.exe
+            apps/launcher/release/*.dmg
+            apps/launcher/release/*.zip
+            apps/launcher/release/*.yml
+            apps/launcher/release/*.blockmap
+            apps/launcher/release/SHA256SUMS-*.txt
+          if-no-files-found: error
+          retention-days: 14
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: installers
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: Auralis-*
+          path: release
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: release/*
+          fail_on_unmatched_files: true
+          generate_release_notes: true

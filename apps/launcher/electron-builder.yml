@@ -1,0 +1,62 @@
+appId: io.auralis.launcher
+productName: Auralis
+copyright: Copyright © 2026 Auralis Contributors
+artifactName: Auralis-${version}-${os}-${arch}.${ext}
+directories:
+  output: release
+  buildResources: build
+files:
+  - dist/**
+  - dist-electron/**
+  - package.json
+asar: true
+asarUnpack:
+  - '**/*.node'
+publish:
+  provider: github
+  owner: ndzeone
+  repo: Auralis
+win:
+  icon: build/icon.ico
+  target:
+    - target: nsis
+      arch: [x64]
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Auralis
+  uninstallDisplayName: Auralis
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
+mac:
+  category: public.app-category.games
+  icon: build/icon.icns
+  target:
+    - target: dmg
+      arch: [arm64]
+    - target: zip
+      arch: [arm64]
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.plist
+afterSign: build/notarize.cjs
+dmg:
+  background: build/dmg-background.png
+  iconSize: 104
+  window:
+    width: 660
+    height: 440
+  contents:
+    - x: 180
+      y: 210
+    - x: 480
+      y: 210
+      type: link
+      path: /Applications
+linux:
+  icon: build/icon.png
+  target: [dir]

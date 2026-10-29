@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="660" height="440" viewBox="0 0 660 440">
+ <defs><linearGradient id="b" x2="1" y2="1"><stop stop-color="#242039"/><stop offset="1" stop-color="#0C141A"/></linearGradient></defs>
+ <rect width="660" height="440" fill="url(#b)"/>
+ <circle cx="100" cy="20" r="170" fill="#AC95F6" opacity=".06"/>
+ <circle cx="600" cy="420" r="230" fill="#68E8D0" opacity=".05"/>
+ <text x="330" y="70" text-anchor="middle" font-family="Helvetica,Arial,sans-serif" font-size="28" letter-spacing="7" fill="#EEE8FF">AURALIS</text>
+ <text x="330" y="100" text-anchor="middle" font-family="Helvetica,Arial,sans-serif" font-size="13" fill="#B4AEC7">Your next world starts here.</text>
+ <path d="M290 224h80m-16-14 16 14-16 14" fill="none" stroke="#B6A3FF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+ <text x="330" y="365" text-anchor="middle" font-family="Helvetica,Arial,sans-serif" font-size="14" fill="#C9C3DB">Drag Auralis into Applications to install</text>
+</svg>

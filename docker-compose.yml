@@ -1,0 +1,49 @@
+name: auralis-dev
+services:
+  postgres:
+    image: postgres:16-bookworm
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-auralis}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-auralis_local_only}
+      POSTGRES_DB: ${POSTGRES_DB:-auralis}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      NODE_ENV: development
+      HOST: 0.0.0.0
+      PORT: 3001
+      DATABASE_URL: postgresql://${POSTGRES_USER:-auralis}:${POSTGRES_PASSWORD:-auralis_local_only}@postgres:5432/${POSTGRES_DB:-auralis}?schema=public
+      JWT_SECRET: ${JWT_SECRET:-auralis-local-development-secret-change-in-production}
+      WEB_ORIGIN: http://localhost:5174
+      LAUNCHER_ORIGIN: http://localhost:5173
+      DEV_MAILBOX: "true"
+      TRUST_PROXY: "true"
+    ports:
+      - "127.0.0.1:3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        VITE_API_URL: /api
+    ports:
+      - "127.0.0.1:5174:80"
+    depends_on:
+      api:
+        condition: service_healthy
+volumes:
+  postgres_data:

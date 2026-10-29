@@ -1,0 +1,14 @@
+packages:
+  - apps/*
+  - packages/*
+onlyBuiltDependencies:
+  - '@prisma/client'
+  - '@prisma/engines'
+  - argon2
+  - electron
+  - esbuild
+  - prisma
+  - sharp
+
+overrides:
+  '@xmcl/unzip': '2.1.2'

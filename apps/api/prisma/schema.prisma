@@ -1,0 +1,126 @@
+generator client {
+  provider = "prisma-client-js"
+  engineType = "client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String        @id @default(cuid())
+  email           String        @unique
+  username        String        @unique
+  passwordHash    String
+  emailVerifiedAt DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  sessions        Session[]
+  profiles        Profile[]
+  settings        UserSettings?
+  skin            Skin?
+  capes           Cape[]
+  emailTokens     EmailToken[]
+  auditLogs       AuditLog[]
+}
+
+model Session {
+  id            String         @id @default(cuid())
+  userId        String
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deviceId      String
+  deviceName    String
+  createdAt     DateTime       @default(now())
+  lastUsedAt    DateTime       @default(now())
+  expiresAt     DateTime
+  revokedAt     DateTime?
+  refreshTokens RefreshToken[]
+  @@index([userId, revokedAt])
+  @@index([expiresAt])
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
+  sessionId String
+  session   Session   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+  expiresAt DateTime
+  usedAt    DateTime?
+  @@index([sessionId])
+  @@index([expiresAt])
+}
+
+model EmailToken {
+  id        String    @id @default(cuid())
+  tokenHash String    @unique
+  purpose   String
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+  expiresAt DateTime
+  usedAt    DateTime?
+  @@index([userId, purpose])
+  @@index([expiresAt])
+}
+
+model Profile {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  version    String
+  memoryMb   Int      @default(4096)
+  jvmArgs    String[] @default([])
+  icon       String   @default("grass")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  @@unique([userId, name])
+}
+
+model UserSettings {
+  userId   String @id
+  user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  theme    String @default("aurora")
+  language String @default("ru")
+}
+
+model Skin {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  png       Bytes
+  sha256    String
+  model     String   @default("classic")
+  updatedAt DateTime @updatedAt
+}
+
+model Cape {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String
+  url       String
+  createdAt DateTime @default(now())
+  @@index([userId])
+}
+
+model News {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  excerpt     String
+  body        String
+  publishedAt DateTime @default(now())
+  @@index([publishedAt])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String
+  createdAt DateTime @default(now())
+  @@index([userId, createdAt])
+}

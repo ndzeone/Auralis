@@ -1,0 +1,35 @@
+{
+  "name": "auralis",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@10.30.3",
+  "engines": {
+    "node": ">=22 <25"
+  },
+  "scripts": {
+    "dev": "corepack pnpm --parallel --filter @auralis/api --filter @auralis/web dev",
+    "dev:launcher": "corepack pnpm --filter @auralis/launcher dev",
+    "build": "corepack pnpm -r --if-present build",
+    "typecheck": "corepack pnpm -r --if-present typecheck",
+    "test": "corepack pnpm -r --if-present test",
+    "test:e2e": "playwright test",
+    "lint": "eslint apps packages --max-warnings 0",
+    "format": "prettier --write .",
+    "db:generate": "corepack pnpm --filter @auralis/api db:generate",
+    "db:migrate": "corepack pnpm --filter @auralis/api db:migrate",
+    "db:seed": "corepack pnpm --filter @auralis/api db:seed",
+    "dist:win": "corepack pnpm --filter @auralis/launcher dist:win",
+    "dist:mac": "corepack pnpm --filter @auralis/launcher dist:mac",
+    "assets": "node scripts/generate-assets.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.0",
+    "@playwright/test": "^1.58.2",
+    "eslint": "^9.39.0",
+    "globals": "^16.5.0",
+    "prettier": "^3.8.1",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.56.0",
+    "sharp": "^0.34.5"
+  }
+}

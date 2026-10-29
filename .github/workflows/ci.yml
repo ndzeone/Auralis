@@ -1,0 +1,64 @@
+name: Checks
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-bookworm
+        env:
+          POSTGRES_USER: auralis
+          POSTGRES_PASSWORD: auralis_local_only
+          POSTGRES_DB: auralis
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U auralis -d auralis"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://auralis:auralis_local_only@localhost:5432/auralis?schema=public
+      TEST_DATABASE_URL: postgresql://auralis:auralis_local_only@localhost:5432/auralis?schema=public
+      JWT_SECRET: auralis-ci-only-secret-at-least-32-characters
+      DEV_MAILBOX: 'true'
+      WEB_ORIGIN: http://localhost:5174
+      LAUNCHER_ORIGIN: http://localhost:5173
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.30.3
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm db:generate
+      - run: pnpm db:migrate
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm test
+      - run: pnpm build
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: browser-test-report
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 7
