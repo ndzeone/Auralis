@@ -101,6 +101,10 @@ jobs:
           CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
         run: |
+          # An empty CSC_LINK is treated as the project directory, not "no certificate".
+          if [ -z "${CSC_LINK:-}" ]; then
+            unset CSC_LINK CSC_KEY_PASSWORD
+          fi
           set +e
           pnpm dist:win 2>&1 | tee "$RUNNER_TEMP/auralis-build.log"
           result=${PIPESTATUS[0]}
@@ -123,6 +127,10 @@ jobs:
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
+          # An empty CSC_LINK is treated as the project directory, not "no certificate".
+          if [ -z "${CSC_LINK:-}" ]; then
+            unset CSC_LINK CSC_KEY_PASSWORD
+          fi
           set +e
           pnpm dist:mac 2>&1 | tee "$RUNNER_TEMP/auralis-build.log"
           result=${PIPESTATUS[0]}
