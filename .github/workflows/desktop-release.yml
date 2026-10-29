@@ -100,7 +100,19 @@ jobs:
           CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
           CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
-        run: pnpm dist:win
+        run: |
+          set +e
+          pnpm dist:win 2>&1 | tee "$RUNNER_TEMP/auralis-build.log"
+          result=${PIPESTATUS[0]}
+          if [ "$result" -ne 0 ]; then
+            node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          const lines = readFileSync(`${process.env.RUNNER_TEMP}/auralis-build.log`, 'utf8').split('\n').slice(-35).join('\n');
+          const escaped = lines.replaceAll('%', '%25').replaceAll('\r', '%0D').replaceAll('\n', '%0A');
+          console.log(`::error title=Native installer build failed::${escaped}`);
+          NODE
+            exit "$result"
+          fi
       - name: macOS Apple Silicon DMG and update ZIP
         if: matrix.target == 'mac'
         env:
@@ -110,7 +122,19 @@ jobs:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        run: pnpm dist:mac
+        run: |
+          set +e
+          pnpm dist:mac 2>&1 | tee "$RUNNER_TEMP/auralis-build.log"
+          result=${PIPESTATUS[0]}
+          if [ "$result" -ne 0 ]; then
+            node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          const lines = readFileSync(`${process.env.RUNNER_TEMP}/auralis-build.log`, 'utf8').split('\n').slice(-35).join('\n');
+          const escaped = lines.replaceAll('%', '%25').replaceAll('\r', '%0D').replaceAll('\n', '%0A');
+          console.log(`::error title=Native installer build failed::${escaped}`);
+          NODE
+            exit "$result"
+          fi
       - name: Compute artifact hashes
         env:
           AURALIS_TARGET: ${{ matrix.target }}
